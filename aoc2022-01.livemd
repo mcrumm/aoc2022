@@ -1,0 +1,128 @@
+# Advent of Code 2022 - Day 1 - fork
+
+## Puzzle description
+
+[Day 1: Calorie Counting](https://adventofcode.com/2022/day/1).
+
+## Input
+
+```elixir
+defmodule Input do
+  def load! do
+    "input/01.txt"
+    |> Path.expand(__DIR__)
+    |> File.stream!()
+  end
+
+  @doc """
+  Returns normalized output when generating streams from files or string input.
+  """
+  def to_stream(input) when is_binary(input) do
+    input
+    |> String.trim("\n")
+    |> String.splitter("\n")
+  end
+
+  def to_stream(stream) do
+    stream
+    |> Stream.map(fn string -> String.trim_trailing(string, "\n") end)
+  end
+end
+```
+
+## Solution
+
+```elixir
+defmodule Part1 do
+  # preflight:
+  ## split string into lines (without break characters)
+  def run(input) do
+    # 1) transform input to grouped totals
+    # 2) return the max of the totals
+    input
+    |> to_grouped_sums()
+    |> Enum.max()
+  end
+
+  def to_grouped_sums(input) do
+    input
+    |> Stream.transform(
+      fn -> [] end,
+      fn
+        ## if the item is the empty string (""), then:
+        ### add the accumulated items to the new stream
+        ### reset the accumulator to the empty list
+        "", acc ->
+          {[acc], []}
+
+        item, acc ->
+          ## otherwise, add the item to the head of the accumulator
+          {[], [String.to_integer(item) | acc]}
+      end,
+      fn
+        [] -> {:halt, []}
+        acc -> {[acc], []}
+      end,
+      fn _ -> :ok end
+    )
+    |> Stream.map(&Enum.sum/1)
+  end
+end
+
+defmodule Part2 do
+  # preflight:
+  ## split string into lines (without break characters)
+  def run(input) do
+    # 1) transform input to grouped totals
+    # 2) sort totals descending (sort + reverse)
+    # 3) take the top 3 totals
+    # 4) return the sum of the top 3 totals
+    input
+    |> Part1.to_grouped_sums()
+    |> Enum.into([])
+    |> Enum.sort()
+    |> Enum.reverse()
+    |> Enum.take(3)
+    |> Enum.sum()
+  end
+end
+
+ExUnit.start(autorun: false)
+
+defmodule Test do
+  use ExUnit.Case, async: true
+  @example_input ~s(
+1000
+2000
+3000
+
+4000
+
+5000
+6000
+
+7000
+8000
+9000
+
+10000
+)
+
+  @input Input.load!()
+
+  test "part 1" do
+    assert @example_input |> Input.to_stream() |> Part1.run() === 24000
+
+    @input |> Input.to_stream() |> Part1.run() |> dbg()
+  end
+
+  test "part 2" do
+    assert @example_input |> Input.to_stream() |> Part2.run() === 45000
+
+    @input |> Input.to_stream() |> Part2.run() |> dbg()
+  end
+end
+
+ExUnit.configure(trace: true)
+ExUnit.run()
+```
