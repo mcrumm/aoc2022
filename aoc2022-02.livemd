@@ -43,11 +43,9 @@ defmodule Part1 do
   ## split string into lines (without break characters)
   def run(input) do
     input
-    |> Input.debug()
     |> Stream.map(&check/1)
     |> Enum.into([])
     |> Enum.sum()
-    |> dbg()
   end
 
   # Rocks:      A X
@@ -90,8 +88,38 @@ defmodule Part2 do
   # preflight:
   ## split string into lines (without break characters)
   def run(input) do
-    ###
+    input
+    |> Stream.map(&check/1)
+    |> Enum.into([])
+    |> Enum.sum()
   end
+
+  # rock / L, choose scissors
+  def check("A X"), do: 3
+
+  # rock / D, choose rock
+  def check("A Y"), do: 4
+
+  # rock / W, choose paper
+  def check("A Z"), do: 8
+
+  # paper / L, choose rock
+  def check("B X"), do: 1
+
+  # paper / D, choose paper
+  def check("B Y"), do: 5
+
+  # paper / W, choose: scissors
+  def check("B Z"), do: 9
+
+  # scissors / L, choose: paper
+  def check("C X"), do: 2
+
+  # scissors / D, choose: scissors
+  def check("C Y"), do: 6
+
+  # scissors / W, choose: rock
+  def check("C Z"), do: 7
 end
 
 ExUnit.start(autorun: false)
