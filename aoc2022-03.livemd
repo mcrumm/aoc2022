@@ -2,7 +2,7 @@
 
 ```elixir
 Mix.install([
-  {:req, "~> 0.3.2"}
+  {:req_aoc, github: "mcrumm/req_aoc", ref: "28e3813"}
 ])
 ```
 
@@ -18,13 +18,8 @@ Note: I grew tired of downloading my user input, so I figured out how to downloa
 
 ```elixir
 defmodule Input do
-  @url "https://adventofcode.com/2022/day/3/input"
-
   def load! do
-    Req.get!(@url,
-      headers: [{:cookie, ~s<session=#{System.fetch_env!("LB_AOC_SESSION")}>}],
-      max_retries: 0
-    ).body
+    ReqAOC.fetch!({2022, 03, System.fetch_env!("LB_AOC_SESSION")}, max_retries: 0)
   end
 
   @doc """
