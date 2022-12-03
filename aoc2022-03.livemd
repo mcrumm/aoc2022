@@ -1,0 +1,142 @@
+# Advent of Code 2022 - Day 3
+
+```elixir
+Mix.install([
+  {:req, "~> 0.3.2"}
+])
+```
+
+## Puzzle description
+
+[Day 3: Rucksack Reorganization](https://adventofcode.com/2022/day/3).
+
+<!-- livebook:{"break_markdown":true} -->
+
+Note: I grew tired of downloading my user input, so I figured out how to download the input from the Advent of Code site. You need to find your session id on adventofcode.com. Use DevTools or similar and inspect the Request Headers to find your session id and then add it to Livebook secrets as `AOC_SESSION`.
+
+## Input
+
+```elixir
+defmodule Input do
+  @url "https://adventofcode.com/2022/day/3/input"
+
+  def load! do
+    Req.get!(@url,
+      headers: [{:cookie, ~s<session=#{System.fetch_env!("LB_AOC_SESSION")}>}],
+      max_retries: 0
+    ).body
+  end
+
+  @doc """
+  Returns normalized output when generating streams from files or string input.
+  """
+  def to_stream(input) when is_binary(input) do
+    input
+    |> String.trim("\n")
+    |> String.splitter("\n")
+  end
+
+  def to_stream(stream) do
+    stream
+    |> Stream.map(fn string -> String.trim_trailing(string, "\n") end)
+  end
+
+  def debug(stream) do
+    stream |> Enum.into([]) |> dbg()
+    stream
+  end
+end
+```
+
+## Solution
+
+```elixir
+defmodule Part1 do
+  # preflight:
+  ## split string into lines (without break characters)
+  def run(input) do
+    input
+    |> Stream.map(fn line ->
+      # convert line to codepoints (single characters)
+      codepoints = line |> String.codepoints()
+
+      half = div(Enum.count(codepoints), 2)
+
+      # split the rucksack into two equal compartments
+      {a, b} = codepoints |> Enum.split(half)
+
+      # converts each compartment into a MapSet
+      # finds the intersection (should only be one item)
+      # transforms the intersection MapSet into a list
+      # returns the first (only) character in the list
+      # converts the character into its codepoint
+      # returns the character value (1-52)
+      MapSet.new(a)
+      |> MapSet.intersection(MapSet.new(b))
+      |> MapSet.to_list()
+      |> hd()
+      |> :binary.first()
+      |> char_value()
+    end)
+    |> Enum.into([])
+    |> Enum.sum()
+  end
+
+  lower = Enum.into(?a..?z, [])
+  upper = Enum.into(?A..?Z, [])
+  alphabet = lower ++ upper
+
+  for {c, k} <- Enum.with_index(alphabet, 1) do
+    def char_value(unquote(c)), do: unquote(k)
+  end
+end
+
+defmodule Part2 do
+  # preflight:
+  ## split string into lines (without break characters)
+  def run(input) do
+    ###
+  end
+end
+
+ExUnit.start(autorun: false)
+
+defmodule Test do
+  use ExUnit.Case, async: true
+  @example_input ~s(
+vJrwpWtwJgWrhcsFMMfFFhFp
+jqHRNqRjqzjGDLGLrsFMfFZSrLrFZsSL
+PmmdzqPrVvPwwTWBwg
+wMqvLMZHhHMvwLHjbvcjnnSBnvTQFn
+ttgJtRGJQctTZtZT
+CrZsJsPPZsGzwwsLwLmpwMDw
+)
+
+  @input Input.load!()
+
+  test "char_value" do
+    for {l, k} <- Enum.with_index(?a..?z, 1) do
+      assert Part1.char_value(l) == k
+    end
+
+    for {u, k} <- Enum.with_index(?A..?Z, 27) do
+      assert Part1.char_value(u) == k
+    end
+  end
+
+  test "part 1" do
+    assert @example_input |> Input.to_stream() |> Part1.run() === 157
+
+    @input |> Input.to_stream() |> Part1.run() |> dbg()
+  end
+
+  test "part 2" do
+    assert @example_input |> Input.to_stream() |> Part2.run() === nil
+
+    @input |> Input.to_stream() |> Part2.run() |> dbg()
+  end
+end
+
+ExUnit.configure(trace: true)
+ExUnit.run()
+```

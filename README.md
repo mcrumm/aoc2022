@@ -6,3 +6,4 @@ https://adventofcode.com/2022/
 
 * [Day 01](aoc2022-01.livemd)
 * [Day 02](aoc2022-02.livemd)
+* [Day 03](aoc2022-03.livemd)
