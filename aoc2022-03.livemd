@@ -12,7 +12,7 @@ Mix.install([
 
 <!-- livebook:{"break_markdown":true} -->
 
-Note: I grew tired of downloading my user input, so I figured out how to download the input from the Advent of Code site. You need to find your session id on adventofcode.com. Use DevTools or similar and inspect the Request Headers to find your session id and then add it to Livebook secrets as `AOC_SESSION`.
+Note: I grew tired of downloading my user input, so I figured out how to download the input from the Advent of Code site. You need to [get your session cookie](https://github.com/mcrumm/req_aoc#how-to-get-the-session-cookie) on adventofcode.com. Use DevTools or similar and inspect the Request Headers to find your session id and then add it to Livebook secrets as `AOC_SESSION`.
 
 ## Input
 
