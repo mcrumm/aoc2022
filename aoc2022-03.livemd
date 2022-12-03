@@ -28,22 +28,12 @@ defmodule Input do
   end
 
   @doc """
-  Returns normalized output when generating streams from files or string input.
+  Splits a string by newlines.
   """
-  def to_stream(input) when is_binary(input) do
+  def to_lines(input) when is_binary(input) do
     input
     |> String.trim("\n")
-    |> String.splitter("\n")
-  end
-
-  def to_stream(stream) do
-    stream
-    |> Stream.map(fn string -> String.trim_trailing(string, "\n") end)
-  end
-
-  def debug(stream) do
-    stream |> Enum.into([]) |> dbg()
-    stream
+    |> String.split("\n")
   end
 end
 ```
@@ -56,7 +46,7 @@ defmodule Part1 do
   ## split string into lines (without break characters)
   def run(input) do
     input
-    |> Stream.map(fn line ->
+    |> Enum.map(fn line ->
       # split the rucksack into two equal compartments
       {head, tail} = String.split_at(line, div(String.length(line), 2))
 
@@ -69,7 +59,6 @@ defmodule Part1 do
         end
       end)
     end)
-    |> Enum.into([])
     |> Enum.sum()
   end
 
@@ -95,8 +84,8 @@ defmodule Part2 do
     # convert to char value
     # sum
     input
-    |> Stream.chunk_every(3)
-    |> Stream.map(fn [a, b, c] ->
+    |> Enum.chunk_every(3)
+    |> Enum.map(fn [a, b, c] ->
       # convert a to codepoints
       # look for match in b
       a
@@ -152,15 +141,15 @@ CrZsJsPPZsGzwwsLwLmpwMDw
   end
 
   test "part 1" do
-    assert @example_input |> Input.to_stream() |> Part1.run() === 157
+    assert @example_input |> Input.to_lines() |> Part1.run() === 157
 
-    @input |> Input.to_stream() |> Part1.run() |> dbg()
+    @input |> Input.to_lines() |> Part1.run() |> dbg()
   end
 
   test "part 2" do
-    assert @example_input |> Input.to_stream() |> Part2.run() === 70
+    assert @example_input |> Input.to_lines() |> Part2.run() === 70
 
-    @input |> Input.to_stream() |> Part2.run() |> dbg()
+    @input |> Input.to_lines() |> Part2.run() |> dbg()
   end
 end
 
