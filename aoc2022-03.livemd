@@ -57,25 +57,17 @@ defmodule Part1 do
   def run(input) do
     input
     |> Stream.map(fn line ->
-      # convert line to codepoints (single characters)
-      codepoints = line |> String.codepoints()
-
-      half = div(Enum.count(codepoints), 2)
-
       # split the rucksack into two equal compartments
-      {a, b} = codepoints |> Enum.split(half)
+      {head, tail} = String.split_at(line, div(String.length(line), 2))
 
-      # converts each compartment into a MapSet
-      # finds the intersection (should only be one item)
-      # transforms the intersection MapSet into a list
-      # returns the first (only) character in the list
-      # converts the character into its codepoint
-      # returns the character value (1-52)
-      MapSet.new(a)
-      |> MapSet.intersection(MapSet.new(b))
-      |> MapSet.to_list()
-      |> hd()
-      |> priority()
+      head
+      |> String.codepoints()
+      |> Enum.reduce_while(:ok, fn code, _ ->
+        case :binary.match(tail, code) do
+          {_, 1} -> {:halt, code |> priority()}
+          :nomatch -> {:cont, :ok}
+        end
+      end)
     end)
     |> Enum.into([])
     |> Enum.sum()
