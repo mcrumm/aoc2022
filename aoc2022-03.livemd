@@ -75,8 +75,7 @@ defmodule Part1 do
       |> MapSet.intersection(MapSet.new(b))
       |> MapSet.to_list()
       |> hd()
-      |> :binary.first()
-      |> char_value()
+      |> priority()
     end)
     |> Enum.into([])
     |> Enum.sum()
@@ -86,8 +85,12 @@ defmodule Part1 do
   upper = Enum.into(?A..?Z, [])
   alphabet = lower ++ upper
 
+  def priority(x) when is_binary(x) do
+    x |> :binary.first() |> priority()
+  end
+
   for {c, k} <- Enum.with_index(alphabet, 1) do
-    def char_value(unquote(c)), do: unquote(k)
+    def priority(unquote(c)), do: unquote(k)
   end
 end
 
@@ -95,7 +98,39 @@ defmodule Part2 do
   # preflight:
   ## split string into lines (without break characters)
   def run(input) do
-    ###
+    # chunk lines into groups of three
+    # find codepoint intersecting all three lines
+    # convert to char value
+    # sum
+    input
+    |> Stream.chunk_every(3)
+    |> Stream.map(fn [a, b, c] ->
+      # convert a to codepoints
+      # look for match in b
+      a
+      |> String.codepoints()
+      |> Enum.reduce_while(nil, fn code, acc ->
+        # find match in b
+        case :binary.match(b, code) do
+          {_, _} ->
+            # find match in c
+            case :binary.match(c, code) do
+              {_, _} ->
+                # success! return the priority value
+                {:halt, Part1.priority(code)}
+
+              :nomatch ->
+                # continue to next character
+                {:cont, acc}
+            end
+
+          :nomatch ->
+            # continue to next character
+            {:cont, acc}
+        end
+      end)
+    end)
+    |> Enum.sum()
   end
 end
 
@@ -114,13 +149,13 @@ CrZsJsPPZsGzwwsLwLmpwMDw
 
   @input Input.load!()
 
-  test "char_value" do
+  test "priority" do
     for {l, k} <- Enum.with_index(?a..?z, 1) do
-      assert Part1.char_value(l) == k
+      assert Part1.priority(l) == k
     end
 
     for {u, k} <- Enum.with_index(?A..?Z, 27) do
-      assert Part1.char_value(u) == k
+      assert Part1.priority(u) == k
     end
   end
 
@@ -131,7 +166,7 @@ CrZsJsPPZsGzwwsLwLmpwMDw
   end
 
   test "part 2" do
-    assert @example_input |> Input.to_stream() |> Part2.run() === nil
+    assert @example_input |> Input.to_stream() |> Part2.run() === 70
 
     @input |> Input.to_stream() |> Part2.run() |> dbg()
   end
