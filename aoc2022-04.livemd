@@ -1,0 +1,65 @@
+# Advent of Code 2022 - Day 4
+
+```elixir
+Mix.install([
+  {:req_aoc, github: "mcrumm/req_aoc", ref: "eef58c9"}
+])
+```
+
+## Puzzle description
+
+[Day 4: ???](https://adventofcode.com/2022/day/4).
+
+## Solution
+
+```elixir
+defmodule Part1 do
+  # preflight:
+  ## split string into lines (without break characters)
+  def run(input) do
+    ###
+  end
+end
+
+defmodule Part2 do
+  # preflight:
+  ## split string into lines (without break characters)
+  def run(input) do
+    ###
+  end
+end
+
+ExUnit.start(autorun: false)
+
+defmodule Test do
+  use ExUnit.Case, async: true
+  @example_input ~s(
+)
+
+  @input System.fetch_env!("LB_AOC_SESSION") |> ReqAOC.fetch!({2022, 04}, max_retries: 0)
+
+  test "part 1" do
+    assert @example_input |> to_lines() |> Part1.run() === nil
+
+    @input |> to_lines() |> Part1.run() |> dbg()
+  end
+
+  test "part 2" do
+    assert @example_input |> to_lines() |> Part2.run() === nil
+
+    @input |> to_lines() |> Part2.run() |> dbg()
+  end
+
+  @doc """
+  Splits a string by newlines.
+  """
+  def to_lines(input) when is_binary(input) do
+    input
+    |> String.trim("\n")
+    |> String.split("\n")
+  end
+end
+
+ExUnit.configure(trace: true)
+ExUnit.run()
+```
