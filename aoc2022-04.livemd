@@ -21,7 +21,6 @@ defmodule Part1 do
   # preflight:
   ## split string into lines (without break characters)
   def run(input) do
-    ###
     input
     |> Stream.map(fn line ->
       [head, tail] = line |> String.split(",", parts: 2)
@@ -40,7 +39,17 @@ defmodule Part2 do
   # preflight:
   ## split string into lines (without break characters)
   def run(input) do
-    ###
+    input
+    |> Stream.map(fn line ->
+      [head, tail] = line |> String.split(",", parts: 2)
+      [hh, ht] = head |> String.split("-", parts: 2) |> Enum.map(&String.to_integer/1)
+      [th, tt] = tail |> String.split("-", parts: 2) |> Enum.map(&String.to_integer/1)
+      hms = Range.new(hh, ht) |> Enum.into([]) |> MapSet.new()
+      tms = Range.new(th, tt) |> Enum.into([]) |> MapSet.new()
+      MapSet.intersection(hms, tms)
+    end)
+    |> Stream.filter(fn m -> MapSet.size(m) > 0 end)
+    |> Enum.count()
   end
 end
 
@@ -66,7 +75,7 @@ defmodule Test do
   end
 
   test "part 2" do
-    assert @example_input |> to_lines() |> Part2.run() === nil
+    assert @example_input |> to_lines() |> Part2.run() === 4
 
     @input |> to_lines() |> Part2.run() |> dbg()
   end
