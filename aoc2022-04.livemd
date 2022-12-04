@@ -18,16 +18,21 @@ defmodule Part1 do
   ## split string into lines (without break characters)
   def run(input) do
     input
-    |> Stream.map(&to_map_sets/1)
-    |> Stream.filter(fn {hms, tms} -> MapSet.subset?(hms, tms) or MapSet.subset?(tms, hms) end)
+    |> Stream.map(fn line ->
+      {hr, tr} = to_range_pair(line)
+      {MapSet.new(hr), MapSet.new(tr)}
+    end)
+    |> Stream.filter(fn {hms, tms} ->
+      MapSet.subset?(hms, tms) or MapSet.subset?(tms, hms)
+    end)
     |> Enum.count()
   end
 
-  def to_map_sets(line) do
+  def to_range_pair(line) do
     [head, tail] = line |> String.split(",", parts: 2)
     [h1, h2] = head |> String.split("-", parts: 2) |> Enum.map(&String.to_integer/1)
     [t1, t2] = tail |> String.split("-", parts: 2) |> Enum.map(&String.to_integer/1)
-    {MapSet.new(h1..h2), MapSet.new(t1..t2)}
+    {h1..h2, t1..t2}
   end
 end
 
@@ -36,11 +41,8 @@ defmodule Part2 do
   ## split string into lines (without break characters)
   def run(input) do
     input
-    |> Stream.map(fn line ->
-      {hms, tms} = line |> Part1.to_map_sets()
-      MapSet.intersection(hms, tms)
-    end)
-    |> Stream.filter(fn m -> MapSet.size(m) > 0 end)
+    |> Stream.map(fn line -> line |> Part1.to_range_pair() end)
+    |> Stream.filter(fn {hr, tr} -> not Range.disjoint?(hr, tr) end)
     |> Enum.count()
   end
 end
@@ -59,6 +61,19 @@ defmodule Test do
 )
 
   @input System.fetch_env!("LB_AOC_SESSION") |> ReqAOC.fetch!({2022, 04}, max_retries: 0)
+
+  test "to_range_pair/1" do
+    assert @example_input
+           |> to_lines()
+           |> Enum.map(&Part1.to_range_pair/1) === [
+             {2..4, 6..8},
+             {2..3, 4..5},
+             {5..7, 7..9},
+             {2..8, 3..7},
+             {6..6, 4..6},
+             {2..6, 4..8}
+           ]
+  end
 
   test "part 1" do
     assert @example_input |> to_lines() |> Part1.run() === 2
