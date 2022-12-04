@@ -10,10 +10,6 @@ Mix.install([
 
 [Day 4: Camp Cleanup](https://adventofcode.com/2022/day/4).
 
-```elixir
-
-```
-
 ## Solution
 
 ```elixir
@@ -22,16 +18,18 @@ defmodule Part1 do
   ## split string into lines (without break characters)
   def run(input) do
     input
-    |> Stream.map(fn line ->
-      [head, tail] = line |> String.split(",", parts: 2)
-      [hh, ht] = head |> String.split("-", parts: 2) |> Enum.map(&String.to_integer/1)
-      [th, tt] = tail |> String.split("-", parts: 2) |> Enum.map(&String.to_integer/1)
-      hms = Range.new(hh, ht) |> Enum.into([]) |> MapSet.new()
-      tms = Range.new(th, tt) |> Enum.into([]) |> MapSet.new()
-      MapSet.subset?(hms, tms) || MapSet.subset?(tms, hms)
-    end)
-    |> Stream.filter(& &1)
+    |> Stream.map(&to_map_sets/1)
+    |> Stream.filter(fn {hms, tms} -> MapSet.subset?(hms, tms) || MapSet.subset?(tms, hms) end)
     |> Enum.count()
+  end
+
+  def to_map_sets(line) do
+    [head, tail] = line |> String.split(",", parts: 2)
+    [hh, ht] = head |> String.split("-", parts: 2) |> Enum.map(&String.to_integer/1)
+    [th, tt] = tail |> String.split("-", parts: 2) |> Enum.map(&String.to_integer/1)
+    hms = Range.new(hh, ht) |> Enum.into([]) |> MapSet.new()
+    tms = Range.new(th, tt) |> Enum.into([]) |> MapSet.new()
+    {hms, tms}
   end
 end
 
@@ -41,11 +39,7 @@ defmodule Part2 do
   def run(input) do
     input
     |> Stream.map(fn line ->
-      [head, tail] = line |> String.split(",", parts: 2)
-      [hh, ht] = head |> String.split("-", parts: 2) |> Enum.map(&String.to_integer/1)
-      [th, tt] = tail |> String.split("-", parts: 2) |> Enum.map(&String.to_integer/1)
-      hms = Range.new(hh, ht) |> Enum.into([]) |> MapSet.new()
-      tms = Range.new(th, tt) |> Enum.into([]) |> MapSet.new()
+      {hms, tms} = line |> Part1.to_map_sets()
       MapSet.intersection(hms, tms)
     end)
     |> Stream.filter(fn m -> MapSet.size(m) > 0 end)
