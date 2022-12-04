@@ -19,17 +19,15 @@ defmodule Part1 do
   def run(input) do
     input
     |> Stream.map(&to_map_sets/1)
-    |> Stream.filter(fn {hms, tms} -> MapSet.subset?(hms, tms) || MapSet.subset?(tms, hms) end)
+    |> Stream.filter(fn {hms, tms} -> MapSet.subset?(hms, tms) or MapSet.subset?(tms, hms) end)
     |> Enum.count()
   end
 
   def to_map_sets(line) do
     [head, tail] = line |> String.split(",", parts: 2)
-    [hh, ht] = head |> String.split("-", parts: 2) |> Enum.map(&String.to_integer/1)
-    [th, tt] = tail |> String.split("-", parts: 2) |> Enum.map(&String.to_integer/1)
-    hms = Range.new(hh, ht) |> Enum.into([]) |> MapSet.new()
-    tms = Range.new(th, tt) |> Enum.into([]) |> MapSet.new()
-    {hms, tms}
+    [h1, h2] = head |> String.split("-", parts: 2) |> Enum.map(&String.to_integer/1)
+    [t1, t2] = tail |> String.split("-", parts: 2) |> Enum.map(&String.to_integer/1)
+    {MapSet.new(h1..h2), MapSet.new(t1..t2)}
   end
 end
 
