@@ -1,0 +1,191 @@
+# Advent of Code 2022 - Day 5
+
+```elixir
+Mix.install([
+  {:req_aoc, github: "mcrumm/req_aoc", ref: "eef58c9"}
+])
+```
+
+## Puzzle description
+
+[Day 5: Supply Sacks](https://adventofcode.com/2022/day/5).
+
+## Solution
+
+```elixir
+defmodule Part1 do
+  # preflight:
+  ## split string into lines (without break characters)
+  def run(input) do
+    ###
+    # for reference:
+    # the first set of rows are the crates, for example: [A] [B] [C]
+    # followed by exactly one row of stack IDs (1 2 3)
+    # followed by an empty row ("")
+    # the next set of rows are the movement instructions, ex: move 1 from 2 to 1
+    ###
+    # idea:
+    # Split the input on the empty row
+    # Parse all of the crate rows into lists of characters
+    # **bad idea, we lose column information for the crate**
+    ###
+    # idea 2:
+    # split the input on the empty row
+    # for the first half, split each line into 4-byte chunks
+    #   parse each chunk as either nil, A-Z, or 0-9
+    #   drop the last line (or use it to validate the row lengths)
+
+    nil
+  end
+
+  @regex ~r/[A-Z]/
+  def to_crates(input) do
+    split_index =
+      Enum.find_index(input, fn
+        "" -> true
+        _ -> false
+      end)
+
+    {crates_with_labels, ["" | moves]} = Enum.split(input, split_index)
+
+    crates =
+      crates_with_labels
+      |> Enum.reverse()
+      |> tl()
+      |> Enum.reverse()
+      |> Enum.reduce([], fn line, acc ->
+        chunks =
+          chunks =
+          line
+          |> chunk(4)
+          |> Enum.map(fn chunk ->
+            @regex
+            |> Regex.scan(chunk)
+            |> List.first()
+            |> case do
+              nil -> nil
+              [bin] when is_binary(bin) -> :binary.first(bin)
+            end
+          end)
+
+        [chunks | acc]
+      end)
+      |> Enum.reverse()
+  end
+
+  def move(crates, count, from, to) do
+    crates
+  end
+
+  @doc """
+  Splits a string into n-byte chunks, preserving leftovers.
+
+  h/t @cmkarlsson - https://elixirforum.com/t/how-to-split-string-into-multiple-chunks-by-size/39662/6
+  """
+  def chunk(string, size), do: chunk(string, size, [])
+
+  defp chunk(<<>>, size, acc), do: Enum.reverse(acc)
+
+  defp chunk(string, size, acc) when byte_size(string) > size do
+    <<c::size(size)-binary, rest::binary>> = string
+    chunk(rest, size, [c | acc])
+  end
+
+  defp chunk(leftover, size, acc) do
+    chunk(<<>>, size, [leftover | acc])
+  end
+end
+
+defmodule Part2 do
+  # preflight:
+  ## split string into lines (without break characters)
+  def run(input) do
+    ###
+    input
+  end
+end
+
+ExUnit.start(autorun: false)
+
+defmodule Test do
+  use ExUnit.Case, async: true
+  @example_input ~s(
+    [D]    
+[N] [C]    
+[Z] [M] [P]
+ 1   2   3 
+
+move 1 from 2 to 1
+move 3 from 1 to 3
+move 2 from 2 to 1
+move 1 from 1 to 2
+)
+
+  year_day = {2022, 05}
+  @input System.fetch_env!("LB_AOC_SESSION") |> ReqAOC.fetch!(year_day, max_retries: 0)
+
+  test "to_crates/1" do
+    assert @example_input |> to_lines() |> Part1.to_crates() == [
+             [nil, ?D, nil],
+             [?N, ?C, nil],
+             [?Z, ?M, ?P]
+           ]
+  end
+
+  test "move/4" do
+    assert after_move_1 =
+             @example_input |> to_lines() |> Part1.to_crates() |> Part1.move(1, 2, 1) == [
+               [?D, nil, nil],
+               [?N, ?C, nil],
+               [?Z, ?M, ?P]
+             ]
+
+    assert after_move_2 =
+             after_move_1 |> Part1.move(3, 1, 3) == [
+               [nil, nil, ?Z],
+               [nil, nil, ?N],
+               [nil, ?C, ?D],
+               [nil, ?M, ?P]
+             ]
+
+    assert after_move_3 =
+             after_move_2 |> Part1.move(2, 2, 1) == [
+               [nil, nil, ?Z],
+               [nil, nil, ?N],
+               [?M, nil, ?D],
+               [?C, nil, ?P]
+             ]
+
+    assert after_move_3 |> Part1.move(1, 1, 2) == [
+             [nil, nil, ?Z],
+             [nil, nil, ?N],
+             [nil, nil, ?D],
+             [?C, ?M, ?P]
+           ]
+  end
+
+  test "part 1" do
+    assert @example_input |> to_lines() |> Part1.run() == 'CMZ'
+
+    @input |> to_lines() |> Part1.run() |> dbg()
+  end
+
+  test "part 2" do
+    assert @example_input |> to_lines() |> Part2.run() == nil
+
+    @input |> to_lines() |> Part2.run() |> dbg()
+  end
+
+  @doc """
+  Splits a string by newlines.
+  """
+  def to_lines(input) when is_binary(input) do
+    input
+    |> String.trim("\n")
+    |> String.split("\n")
+  end
+end
+
+ExUnit.configure(trace: true)
+ExUnit.run()
+```
