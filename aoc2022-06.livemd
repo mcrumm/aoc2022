@@ -47,6 +47,27 @@ defmodule Part2 do
   ## split string into lines (without break characters)
   def run(input) do
     ###
+    input |> String.trim_leading("\n") |> run(0, [])
+  end
+
+  defp run(<<char::size(1)-binary, input::binary>>, index, []) do
+    run(input, index + 1, [char])
+  end
+
+  defp run(<<char::size(1)-binary, input::binary>>, index, chars) when length(chars) < 14 do
+    if char in chars do
+      idx = Enum.find_index(chars, &(&1 == char))
+      {_, new_chars} = Enum.split(chars, idx + 1)
+
+      # restart with the current char
+      run(input, index + 1, new_chars ++ [char])
+    else
+      run(input, index + 1, chars ++ [char])
+    end
+  end
+
+  defp run(_, index, chars) do
+    index
   end
 end
 
@@ -68,7 +89,11 @@ defmodule Test do
   end
 
   test "part 2" do
-    assert @example_input |> Part2.run() |> dbg() === nil
+    assert "mjqjpqmgbljsphdztnvjfqwrcgsmlb" |> Part2.run() |> dbg() === 19
+    assert "bvwbjplbgvbhsrlpgdmjqwftvncz" |> Part2.run() |> dbg() === 23
+    assert "nppdvjthqldpwncqszvftbrmjlhg" |> Part2.run() |> dbg() === 23
+    assert "nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg" |> Part2.run() |> dbg() === 29
+    assert "zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw" |> Part2.run() |> dbg() === 26
 
     @input |> Part2.run() |> dbg()
   end
