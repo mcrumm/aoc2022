@@ -1,0 +1,79 @@
+# Advent of Code 2022 - Day 6
+
+```elixir
+Mix.install([
+  {:req_aoc, github: "mcrumm/req_aoc", ref: "eef58c9"}
+])
+```
+
+## Puzzle description
+
+[Day 6: Tuning Trouble](https://adventofcode.com/2022/day/6).
+
+## Solution
+
+```elixir
+defmodule Part1 do
+  # preflight:
+  ## split string into lines (without break characters)
+  def run(input) do
+    ###
+    input |> String.trim_leading("\n") |> run(0, [])
+  end
+
+  defp run(<<char::size(1)-binary, input::binary>>, index, []) do
+    run(input, index + 1, [char])
+  end
+
+  defp run(<<char::size(1)-binary, input::binary>>, index, chars) when length(chars) < 4 do
+    if char in chars do
+      idx = Enum.find_index(chars, &(&1 == char))
+      {_, new_chars} = Enum.split(chars, idx + 1)
+
+      # restart with the current char
+      run(input, index + 1, new_chars ++ [char])
+    else
+      run(input, index + 1, chars ++ [char])
+    end
+  end
+
+  defp run(_, index, chars) do
+    index
+  end
+end
+
+defmodule Part2 do
+  # preflight:
+  ## split string into lines (without break characters)
+  def run(input) do
+    ###
+  end
+end
+
+ExUnit.start(autorun: false)
+
+defmodule Test do
+  use ExUnit.Case, async: true
+
+  @input System.fetch_env!("LB_AOC_SESSION") |> ReqAOC.fetch!({2022, 06}, max_retries: 0)
+
+  test "part 1" do
+    assert "mjqjpqmgbljsphdztnvjfqwrcgsmlb" |> Part1.run() |> dbg() === 7
+    assert "bvwbjplbgvbhsrlpgdmjqwftvncz" |> Part1.run() |> dbg() === 5
+    assert "nppdvjthqldpwncqszvftbrmjlhg" |> Part1.run() |> dbg() === 6
+    assert "nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg" |> Part1.run() |> dbg() === 10
+    assert "zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw" |> Part1.run() |> dbg() === 11
+
+    @input |> Part1.run() |> dbg()
+  end
+
+  test "part 2" do
+    assert @example_input |> Part2.run() |> dbg() === nil
+
+    @input |> Part2.run() |> dbg()
+  end
+end
+
+ExUnit.configure(trace: true)
+ExUnit.run()
+```
