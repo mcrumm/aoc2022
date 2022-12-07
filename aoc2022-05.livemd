@@ -2,6 +2,7 @@
 
 ```elixir
 Mix.install([
+  {:explorer, "~> 0.4.0"},
   {:req_aoc, github: "mcrumm/req_aoc", ref: "eef58c9"}
 ])
 ```
@@ -34,20 +35,30 @@ defmodule Part1 do
     # for the first half, split each line into 4-byte chunks
     #   parse each chunk as either nil, A-Z, or 0-9
     #   drop the last line (or use it to validate the row lengths)
+    {crates, moves} = new(input)
 
-    nil
+    moves
+    |> Enum.reduce(crates, fn x, acc -> move(acc, x) end)
+    |> answer()
   end
 
   @regex ~r/[A-Z]/
-  def to_crates(input) do
+  def new(input) do
     split_index =
       Enum.find_index(input, fn
         "" -> true
         _ -> false
       end)
 
-    {crates_with_labels, ["" | moves]} = Enum.split(input, split_index)
+    {crates_strings, ["" | move_strings]} = Enum.split(input, split_index)
 
+    crates = crates_strings |> to_crates()
+    moves = move_strings |> to_moves()
+
+    {crates, moves}
+  end
+
+  defp to_crates(crates_with_labels) do
     crates =
       crates_with_labels
       |> Enum.reverse()
@@ -55,7 +66,6 @@ defmodule Part1 do
       |> Enum.reverse()
       |> Enum.reduce([], fn line, acc ->
         chunks =
-          chunks =
           line
           |> chunk(4)
           |> Enum.map(fn chunk ->
@@ -64,17 +74,105 @@ defmodule Part1 do
             |> List.first()
             |> case do
               nil -> nil
-              [bin] when is_binary(bin) -> :binary.first(bin)
+              # [bin] when is_binary(bin) -> :binary.first(bin)
+              [bin] -> bin
             end
           end)
 
         [chunks | acc]
       end)
       |> Enum.reverse()
+      |> crates_df()
   end
 
-  def move(crates, count, from, to) do
+  defp crates_df(crates) do
     crates
+    |> Enum.with_index()
+    |> Enum.reduce([], fn {moves, idx}, acc ->
+      [{to_string(idx), moves} | acc]
+    end)
+    |> Enum.reverse()
+    |> Explorer.DataFrame.new()
+    |> rotate_df()
+  end
+
+  @regex ~r/[0-9]/
+  def to_moves(move_strings) do
+    move_strings
+    |> Enum.map(fn move ->
+      @regex
+      |> Regex.scan(move)
+      |> Enum.map(fn [m] -> String.to_integer(m) end)
+    end)
+  end
+
+  @doc """
+  Updates the crate positions by the given moves.
+  """
+  def move({%Explorer.DataFrame{} = crates, moves}) when is_list(moves) and length(moves) > 0 do
+    [move | rest] = moves
+
+    new_crates = move(crates, move)
+
+    {new_crates, rest}
+  end
+
+  defp move(crates, [count, from, to]) do
+    [from, to] = for x <- [from, to], do: to_string(x)
+
+    # what `move/2` needs to do:
+    #   - first, assume all moves are legal
+    #   - find the "from" column
+    #   - take "count" items
+    #   - put them on the "to" column
+    #   - account for nils, somehow
+    Explorer.DataFrame.mutate_with(crates, fn df ->
+      [
+        {from, Explorer.Series.from_list([])},
+        {to, Explorer.Series.from_list([])}
+      ]
+    end)
+  end
+
+  @doc """
+  Returns the answer string for the given crate dataframe.
+
+  Converts the dataframe back to columns of rows.
+  """
+  def answer(%Explorer.DataFrame{} = crate_df) do
+    crate_df
+    |> rotate_df()
+    |> Explorer.DataFrame.to_series()
+    |> Map.values()
+    |> Explorer.Series.coalesce()
+    |> Explorer.Series.to_list()
+    |> Enum.join()
+  end
+
+  @doc """
+  Rotates and converts the dataframe for easier reading.
+  """
+  def preview({%Explorer.DataFrame{} = crates, _}) do
+    preview(crates)
+  end
+
+  def preview(%Explorer.DataFrame{} = crates) do
+    crates |> rotate_df() |> Explorer.DataFrame.to_columns()
+  end
+
+  # i am sure there must be a better way to do this, but today i don't know what that way is.
+  # so this is a really long-winded and probably inefficient way to rotate the crates matrix
+  # so we can work with columnar data.
+  defp rotate_df(%Explorer.DataFrame{} = df) do
+    df
+    |> Explorer.DataFrame.to_rows()
+    |> Enum.map(fn map -> Map.values(map) end)
+    |> Enum.with_index()
+    |> Enum.reduce([], fn {series, idx}, acc ->
+      [{to_string(idx), series} | acc]
+    end)
+    |> Enum.reverse()
+    |> Explorer.DataFrame.new()
   end
 
   @doc """
@@ -124,48 +222,61 @@ move 1 from 1 to 2
   year_day = {2022, 05}
   @input System.fetch_env!("LB_AOC_SESSION") |> ReqAOC.fetch!(year_day, max_retries: 0)
 
-  test "to_crates/1" do
-    assert @example_input |> to_lines() |> Part1.to_crates() == [
-             [nil, ?D, nil],
-             [?N, ?C, nil],
-             [?Z, ?M, ?P]
+  test "new/1" do
+    assert {crates, moves} = @example_input |> to_lines() |> Part1.new()
+
+    assert Part1.preview(crates) == %{
+             "0" => [nil, "D", nil],
+             "1" => ["N", "C", nil],
+             "2" => ["Z", "M", "P"]
+           }
+
+    assert moves == [
+             [1, 2, 1],
+             [3, 1, 3],
+             [2, 2, 1],
+             [1, 1, 2]
            ]
   end
 
-  test "move/4" do
-    assert after_move_1 =
-             @example_input |> to_lines() |> Part1.to_crates() |> Part1.move(1, 2, 1) == [
-               [?D, nil, nil],
-               [?N, ?C, nil],
-               [?Z, ?M, ?P]
-             ]
+  test "move/1" do
+    crates_moves = @example_input |> to_lines() |> Part1.new()
 
-    assert after_move_2 =
-             after_move_1 |> Part1.move(3, 1, 3) == [
-               [nil, nil, ?Z],
-               [nil, nil, ?N],
-               [nil, ?C, ?D],
-               [nil, ?M, ?P]
-             ]
+    assert {crates, [_, _, _]} = next = Part1.move(crates_moves)
 
-    assert after_move_3 =
-             after_move_2 |> Part1.move(2, 2, 1) == [
-               [nil, nil, ?Z],
-               [nil, nil, ?N],
-               [?M, nil, ?D],
-               [?C, nil, ?P]
-             ]
+    assert Part1.preview(crates) == %{
+             "0" => ["D", nil, nil],
+             "1" => ["N", "C", nil],
+             "2" => ["Z", "M", "P"]
+           }
 
-    assert after_move_3 |> Part1.move(1, 1, 2) == [
-             [nil, nil, ?Z],
-             [nil, nil, ?N],
-             [nil, nil, ?D],
-             [?C, ?M, ?P]
-           ]
+    assert {crates, [_, _]} = Part1.move(next)
+
+    assert Explorer.DataFrame.to_columns(crates) == %{
+             "0" => [],
+             "1" => [nil, "C", "M"],
+             "2" => ["Z", "N", "D", "P"]
+           }
+
+    assert {crates, [_]} = Part1.move(next)
+
+    assert Explorer.DataFrame.to_columns(crates) == %{
+             "0" => ["M", "C"],
+             "1" => [nil],
+             "2" => ["Z", "N", "D", "P"]
+           }
+
+    assert {crates, []} = Part1.move(next)
+
+    assert Explorer.DataFrame.to_columns(crates) == %{
+             "0" => ["M"],
+             "1" => [nil, "C"],
+             "2" => ["Z", "N", "D", "P"]
+           }
   end
 
   test "part 1" do
-    assert @example_input |> to_lines() |> Part1.run() == 'CMZ'
+    assert @example_input |> to_lines() |> Part1.run() == "CMZ"
 
     @input |> to_lines() |> Part1.run() |> dbg()
   end
